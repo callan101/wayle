@@ -119,6 +119,13 @@ When disabled, windows may overlap the bar and the bar draws over them.
 | `dropdown-opacity` | [`Percentage`](/config/types#percentage) | `100` | Dropdown panel opacity (0-100). |
 | `dropdown-autohide` | bool | `true` | Close dropdown when clicking outside it. |
 | `dropdown-freeze-label` | bool | `true` | Freeze the bar button label while its dropdown is open. |
+| `dropdown-notification-max-height` | u32 | `725` | Maximum height of the notification dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-weather-max-height` | u32 | `695` | Maximum height of the weather dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-bluetooth-max-height` | u32 | `512` | Maximum height of the bluetooth dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-network-max-height` | u32 | `512` | Maximum height of the network dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-audio-max-height` | u32 | `512` | Maximum height of the audio dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-media-max-height` | u32 | `410` | Maximum height of the media dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
+| `dropdown-battery-max-height` | u32 | `312` | Maximum height of the battery dropdown in pixels, before `styling.scale`. The dropdown shrinks to fit its content and scrolls once it reaches this height. |
 
 ::: details More about `dropdown-freeze-label`
 
@@ -172,6 +179,13 @@ dropdown-shadow = true
 dropdown-opacity = 100
 dropdown-autohide = true
 dropdown-freeze-label = true
+dropdown-notification-max-height = 725
+dropdown-weather-max-height = 695
+dropdown-bluetooth-max-height = 512
+dropdown-network-max-height = 512
+dropdown-audio-max-height = 512
+dropdown-media-max-height = 410
+dropdown-battery-max-height = 312
 ```
 
 

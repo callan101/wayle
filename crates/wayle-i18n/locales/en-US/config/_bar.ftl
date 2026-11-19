@@ -128,6 +128,27 @@ settings-bar-dropdown-autohide = Dropdown Autohide
 settings-bar-dropdown-freeze-label = Freeze Label
     .description = Prevent bar button label from updating while its dropdown is open
 
+settings-bar-dropdown-notification-max-height = Notifications Max Height
+    .description = Maximum height of the Notifications dropdown before it scrolls
+
+settings-bar-dropdown-weather-max-height = Weather Max Height
+    .description = Maximum height of the Weather dropdown before it scrolls
+
+settings-bar-dropdown-bluetooth-max-height = Bluetooth Max Height
+    .description = Maximum height of the Bluetooth dropdown before it scrolls
+
+settings-bar-dropdown-network-max-height = Network Max Height
+    .description = Maximum height of the Network dropdown before it scrolls
+
+settings-bar-dropdown-audio-max-height = Audio Max Height
+    .description = Maximum height of the Audio dropdown before it scrolls
+
+settings-bar-dropdown-media-max-height = Media Max Height
+    .description = Maximum height of the Media dropdown before it scrolls
+
+settings-bar-dropdown-battery-max-height = Battery Max Height
+    .description = Maximum height of the Battery dropdown before it scrolls
+
 settings-bar-shadow = Shadow
     .description = Enable drop shadow
 

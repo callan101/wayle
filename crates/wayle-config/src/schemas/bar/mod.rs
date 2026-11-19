@@ -251,6 +251,48 @@ pub struct BarConfig {
     #[serde(rename = "dropdown-freeze-label")]
     #[default(true)]
     pub dropdown_freeze_label: ConfigProperty<bool>,
+
+    /// Maximum height of the notifications dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-notification-max-height")]
+    #[default(725u32)]
+    pub dropdown_notification_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the weather dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-weather-max-height")]
+    #[default(695u32)]
+    pub dropdown_weather_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the bluetooth dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-bluetooth-max-height")]
+    #[default(512u32)]
+    pub dropdown_bluetooth_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the network dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-network-max-height")]
+    #[default(512u32)]
+    pub dropdown_network_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the audio dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-audio-max-height")]
+    #[default(512u32)]
+    pub dropdown_audio_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the media dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-media-max-height")]
+    #[default(410u32)]
+    pub dropdown_media_max_height: ConfigProperty<u32>,
+
+    /// Maximum height of the battery dropdown in pixels, before `styling.scale`.
+    /// The dropdown shrinks to fit its content and scrolls once it reaches this height.
+    #[serde(rename = "dropdown-battery-max-height")]
+    #[default(312u32)]
+    pub dropdown_battery_max_height: ConfigProperty<u32>,
 }
 
 impl ModuleInfoProvider for BarConfig {

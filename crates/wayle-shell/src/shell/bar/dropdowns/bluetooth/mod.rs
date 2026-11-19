@@ -22,14 +22,13 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 382.0;
-const BASE_HEIGHT: f32 = 512.0;
 const SCAN_DURATION: Duration = Duration::from_secs(30);
 const ACTION_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub(crate) struct BluetoothDropdown {
     bluetooth: Option<Arc<BluetoothService>>,
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     enabled: bool,
     available: bool,
     scanning: bool,
@@ -58,266 +57,273 @@ impl Component for BluetoothDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-                set_overflow: gtk::Overflow::Hidden,
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_visible: true,
-                        #[watch]
-                        set_icon_name: Some(
-                            if model.enabled {
-                                "ld-bluetooth-symbolic"
-                            } else {
-                                "ld-bluetooth-off-symbolic"
-                            }
-                        ),
-                    },
-                    #[template_child]
-                    label {
-                        set_label: &t!(
-                            "dropdown-bluetooth-title"
-                        ),
-                    },
-                    #[template_child]
-                    actions {
-                        #[template]
-                        GhostIconButton {
-                            add_css_class:
-                                "bluetooth-scan-btn",
-                            set_icon_name:
-                                "tb-refresh-symbolic",
-                            #[watch]
-                            set_visible:
-                                model.available
-                                    && model.enabled,
-                            #[watch]
-                            set_sensitive:
-                                !model.scanning,
-                            #[watch]
-                            set_css_classes: &if
-                                model.scanning
-                            {
-                                vec![
-                                    "ghost-icon",
-                                    "bluetooth-scan-btn",
-                                    "scanning",
-                                ]
-                            } else {
-                                vec![
-                                    "ghost-icon",
-                                    "bluetooth-scan-btn",
-                                ]
-                            },
-                            connect_clicked =>
-                                BluetoothDropdownMsg::ScanRequested,
-                        },
+                Dropdown {
+                    set_overflow: gtk::Overflow::Hidden,
 
-                        #[template]
-                        Switch {
+                    #[template]
+                    DropdownHeader {
+                        #[template_child]
+                        icon {
+                            set_visible: true,
                             #[watch]
-                            #[block_signal(bt_toggle)]
-                            set_active: model.enabled,
-                            #[watch]
-                            set_visible: model.available,
-                            connect_state_set[sender] =>
-                                move |switch, active|
-                            {
-                                sender.input(
-                                    BluetoothDropdownMsg
-                                        ::BluetoothToggled(
-                                            active,
+                            set_icon_name: Some(
+                                if model.enabled {
+                                    "ld-bluetooth-symbolic"
+                                } else {
+                                    "ld-bluetooth-off-symbolic"
+                                }
+                            ),
+                        },
+                        #[template_child]
+                        label {
+                            set_label: &t!(
+                                "dropdown-bluetooth-title"
+                            ),
+                        },
+                        #[template_child]
+                        actions {
+                            #[template]
+                            GhostIconButton {
+                                add_css_class:
+                                    "bluetooth-scan-btn",
+                                set_icon_name:
+                                    "tb-refresh-symbolic",
+                                #[watch]
+                                set_visible:
+                                    model.available
+                                        && model.enabled,
+                                #[watch]
+                                set_sensitive:
+                                    !model.scanning,
+                                #[watch]
+                                set_css_classes: &if
+                                    model.scanning
+                                {
+                                    vec![
+                                        "ghost-icon",
+                                        "bluetooth-scan-btn",
+                                        "scanning",
+                                    ]
+                                } else {
+                                    vec![
+                                        "ghost-icon",
+                                        "bluetooth-scan-btn",
+                                    ]
+                                },
+                                connect_clicked =>
+                                    BluetoothDropdownMsg::ScanRequested,
+                            },
+
+                            #[template]
+                            Switch {
+                                #[watch]
+                                #[block_signal(bt_toggle)]
+                                set_active: model.enabled,
+                                #[watch]
+                                set_visible: model.available,
+                                connect_state_set[sender] =>
+                                    move |switch, active|
+                                {
+                                    sender.input(
+                                        BluetoothDropdownMsg
+                                            ::BluetoothToggled(
+                                                active,
+                                            ),
+                                    );
+                                    switch.set_state(active);
+                                    gtk::glib::Propagation::Stop
+                                } @bt_toggle,
+                            },
+                        },
+                    },
+
+                    #[template]
+                    DropdownContent {
+                        add_css_class: "bluetooth-content",
+
+                        gtk::ScrolledWindow {
+                            add_css_class: "bluetooth-scroll",
+                            set_vexpand: true,
+                            set_hscrollbar_policy: gtk::PolicyType::Never,
+                            set_propagate_natural_height: true,
+
+                            gtk::Box {
+                                set_orientation: gtk::Orientation::Vertical,
+
+                                #[local_ref]
+                                pairing_card_widget -> gtk::Box {},
+
+                                #[name = "my_devices_label"]
+                                gtk::Label {
+                                    add_css_class: "section-label",
+                                    set_halign: gtk::Align::Start,
+                                    set_label: &t!(
+                                        "dropdown-bluetooth-my-devices"
+                                    ),
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && !model
+                                            .my_devices
+                                            .is_empty(),
+                                },
+
+                                #[name = "my_devices_card"]
+                                #[template]
+                                Card {
+                                    add_css_class:
+                                        "bluetooth-device-list",
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && !model
+                                            .my_devices
+                                            .is_empty(),
+                                    #[local_ref]
+                                    my_devices_widget -> gtk::Box {
+                                        set_orientation:
+                                            gtk::Orientation::Vertical,
+                                    },
+                                },
+
+                                #[name = "available_devices_label"]
+                                gtk::Label {
+                                    add_css_class: "section-label",
+                                    set_halign: gtk::Align::Start,
+                                    set_label: &t!(
+                                        "dropdown-bluetooth-available-devices"
+                                    ),
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && (!model
+                                            .available_devices
+                                            .is_empty()
+                                            || model.scanning),
+                                },
+
+                                #[name = "available_devices_card"]
+                                #[template]
+                                Card {
+                                    add_css_class:
+                                        "bluetooth-device-list",
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && !model
+                                            .available_devices
+                                            .is_empty(),
+                                    #[local_ref]
+                                    available_devices_widget -> gtk::Box {
+                                        set_orientation:
+                                            gtk::Orientation::Vertical,
+                                    },
+                                },
+
+                                #[name = "scanning_hint"]
+                                gtk::Label {
+                                    add_css_class:
+                                        "bluetooth-no-new-devices",
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && model.scanning
+                                        && model
+                                            .my_devices
+                                            .is_empty()
+                                        && model
+                                            .available_devices
+                                            .is_empty(),
+                                    set_label: &t!(
+                                        "dropdown-bluetooth-no-new"
+                                    ),
+                                },
+
+                                #[name = "empty_no_devices"]
+                                #[template]
+                                EmptyState {
+                                    #[watch]
+                                    set_visible: model.enabled
+                                        && !model.scanning
+                                        && model
+                                            .my_devices
+                                            .is_empty()
+                                        && model
+                                            .available_devices
+                                            .is_empty(),
+                                    #[template_child]
+                                    icon {
+                                        set_icon_name: Some(
+                                            "ld-bluetooth-searching-symbolic"
                                         ),
-                                );
-                                switch.set_state(active);
-                                gtk::glib::Propagation::Stop
-                            } @bt_toggle,
-                        },
-                    },
-                },
-
-                #[template]
-                DropdownContent {
-                    add_css_class: "bluetooth-content",
-
-                    gtk::ScrolledWindow {
-                        add_css_class: "bluetooth-scroll",
-                        set_vexpand: true,
-                        set_hscrollbar_policy: gtk::PolicyType::Never,
-
-                        gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-
-                            #[local_ref]
-                            pairing_card_widget -> gtk::Box {},
-
-                            #[name = "my_devices_label"]
-                            gtk::Label {
-                                add_css_class: "section-label",
-                                set_halign: gtk::Align::Start,
-                                set_label: &t!(
-                                    "dropdown-bluetooth-my-devices"
-                                ),
-                                #[watch]
-                                set_visible: model.enabled
-                                    && !model
-                                        .my_devices
-                                        .is_empty(),
-                            },
-
-                            #[name = "my_devices_card"]
-                            #[template]
-                            Card {
-                                add_css_class:
-                                    "bluetooth-device-list",
-                                #[watch]
-                                set_visible: model.enabled
-                                    && !model
-                                        .my_devices
-                                        .is_empty(),
-                                #[local_ref]
-                                my_devices_widget -> gtk::Box {
-                                    set_orientation:
-                                        gtk::Orientation::Vertical,
+                                    },
+                                    #[template_child]
+                                    title {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-no-devices-title"
+                                        ),
+                                    },
+                                    #[template_child]
+                                    description {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-no-devices-description"
+                                        ),
+                                    },
                                 },
-                            },
 
-                            #[name = "available_devices_label"]
-                            gtk::Label {
-                                add_css_class: "section-label",
-                                set_halign: gtk::Align::Start,
-                                set_label: &t!(
-                                    "dropdown-bluetooth-available-devices"
-                                ),
-                                #[watch]
-                                set_visible: model.enabled
-                                    && (!model
-                                        .available_devices
-                                        .is_empty()
-                                        || model.scanning),
-                            },
+                                #[name = "empty_bt_off"]
+                                #[template]
+                                EmptyState {
+                                    #[watch]
+                                    set_visible: !model.enabled
+                                        && model.available,
+                                    #[template_child]
+                                    icon {
+                                        set_icon_name: Some(
+                                            "ld-bluetooth-off-symbolic"
+                                        ),
+                                    },
+                                    #[template_child]
+                                    title {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-off-title"
+                                        ),
+                                    },
+                                    #[template_child]
+                                    description {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-off-description"
+                                        ),
+                                    },
+                                },
 
-                            #[name = "available_devices_card"]
-                            #[template]
-                            Card {
-                                add_css_class:
-                                    "bluetooth-device-list",
-                                #[watch]
-                                set_visible: model.enabled
-                                    && !model
-                                        .available_devices
-                                        .is_empty(),
-                                #[local_ref]
-                                available_devices_widget -> gtk::Box {
-                                    set_orientation:
-                                        gtk::Orientation::Vertical,
-                                },
-                            },
-
-                            #[name = "scanning_hint"]
-                            gtk::Label {
-                                add_css_class:
-                                    "bluetooth-no-new-devices",
-                                #[watch]
-                                set_visible: model.enabled
-                                    && model.scanning
-                                    && model
-                                        .my_devices
-                                        .is_empty()
-                                    && model
-                                        .available_devices
-                                        .is_empty(),
-                                set_label: &t!(
-                                    "dropdown-bluetooth-no-new"
-                                ),
-                            },
-
-                            #[name = "empty_no_devices"]
-                            #[template]
-                            EmptyState {
-                                #[watch]
-                                set_visible: model.enabled
-                                    && !model.scanning
-                                    && model
-                                        .my_devices
-                                        .is_empty()
-                                    && model
-                                        .available_devices
-                                        .is_empty(),
-                                #[template_child]
-                                icon {
-                                    set_icon_name: Some(
-                                        "ld-bluetooth-searching-symbolic"
-                                    ),
-                                },
-                                #[template_child]
-                                title {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-no-devices-title"
-                                    ),
-                                },
-                                #[template_child]
-                                description {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-no-devices-description"
-                                    ),
-                                },
-                            },
-
-                            #[name = "empty_bt_off"]
-                            #[template]
-                            EmptyState {
-                                #[watch]
-                                set_visible: !model.enabled
-                                    && model.available,
-                                #[template_child]
-                                icon {
-                                    set_icon_name: Some(
-                                        "ld-bluetooth-off-symbolic"
-                                    ),
-                                },
-                                #[template_child]
-                                title {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-off-title"
-                                    ),
-                                },
-                                #[template_child]
-                                description {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-off-description"
-                                    ),
-                                },
-                            },
-
-                            #[name = "empty_no_adapter"]
-                            #[template]
-                            EmptyState {
-                                #[watch]
-                                set_visible: !model.available,
-                                #[template_child]
-                                icon {
-                                    set_icon_name: Some(
-                                        "ld-bluetooth-off-symbolic"
-                                    ),
-                                },
-                                #[template_child]
-                                title {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-no-adapter-title"
-                                    ),
-                                },
-                                #[template_child]
-                                description {
-                                    set_label: &t!(
-                                        "dropdown-bluetooth-no-adapter-description"
-                                    ),
+                                #[name = "empty_no_adapter"]
+                                #[template]
+                                EmptyState {
+                                    #[watch]
+                                    set_visible: !model.available,
+                                    #[template_child]
+                                    icon {
+                                        set_icon_name: Some(
+                                            "ld-bluetooth-off-symbolic"
+                                        ),
+                                    },
+                                    #[template_child]
+                                    title {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-no-adapter-title"
+                                        ),
+                                    },
+                                    #[template_child]
+                                    description {
+                                        set_label: &t!(
+                                            "dropdown-bluetooth-no-adapter-description"
+                                        ),
+                                    },
                                 },
                             },
                         },
@@ -340,6 +346,7 @@ impl Component for BluetoothDropdown {
             .forward(sender.input_sender(), BluetoothDropdownMsg::PairingCard);
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_bluetooth_max_height.get();
 
         watchers::spawn_config_watcher(&sender, &init.config);
         watchers::spawn_service_watcher(&sender, &init.bluetooth);
@@ -347,7 +354,7 @@ impl Component for BluetoothDropdown {
         let model = Self {
             bluetooth: None,
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             enabled: false,
             available: false,
             scanning: false,
@@ -406,9 +413,9 @@ impl Component for BluetoothDropdown {
                 self.reset_device_watchers(&sender);
             }
 
-            BluetoothDropdownCmd::ScaleChanged(scale) => {
+            BluetoothDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
 
             BluetoothDropdownCmd::ScanComplete => {

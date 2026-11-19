@@ -19,5 +19,5 @@ pub(crate) enum MediaDropdownMsg {
 
 #[derive(Debug)]
 pub(crate) enum MediaDropdownCmd {
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
 }

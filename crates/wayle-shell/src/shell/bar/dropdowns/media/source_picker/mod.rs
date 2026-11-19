@@ -55,6 +55,7 @@ impl Component for SourcePicker {
                 add_css_class: "picker-body",
                 set_vexpand: true,
                 set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
 
                 #[local_ref]
                 source_list -> gtk::ListBox {

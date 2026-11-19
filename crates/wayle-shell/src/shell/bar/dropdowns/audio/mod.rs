@@ -19,7 +19,6 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 382.0;
-const BASE_HEIGHT: f32 = 512.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum AudioPage {
@@ -40,7 +39,7 @@ impl AudioPage {
 
 pub(crate) struct AudioDropdown {
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     active_page: AudioPage,
     main_section: Controller<MainSection>,
     output_picker: Controller<DevicePicker>,
@@ -61,42 +60,48 @@ impl Component for AudioDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_visible: true,
-                        set_icon_name: Some("ld-volume-2-symbolic"),
+                Dropdown {
+
+                    #[template]
+                    DropdownHeader {
+                        #[template_child]
+                        icon {
+                            set_visible: true,
+                            set_icon_name: Some("ld-volume-2-symbolic"),
+                        },
+                        #[template_child]
+                        label {
+                            set_label: &t!("dropdown-audio-title"),
+                        },
                     },
-                    #[template_child]
-                    label {
-                        set_label: &t!("dropdown-audio-title"),
+
+                    #[name = "stack"]
+                    gtk::Stack {
+                        add_css_class: "dropdown-content",
+                        set_vexpand: true,
+                        set_transition_type: gtk::StackTransitionType::SlideLeftRight,
+                        set_transition_duration: 200,
+                        #[local_ref]
+                        add_named[Some("main")] = main_section_widget -> gtk::Box {},
+
+                        #[local_ref]
+                        add_named[Some("output")] = output_picker_widget -> gtk::Box {},
+
+                        #[local_ref]
+                        add_named[Some("input")] = input_picker_widget -> gtk::Box {},
+
+                        #[watch]
+                        set_visible_child_name: model.active_page.name(),
                     },
-                },
-
-                #[name = "stack"]
-                gtk::Stack {
-                    add_css_class: "dropdown-content",
-                    set_vexpand: true,
-                    set_transition_type: gtk::StackTransitionType::SlideLeftRight,
-                    set_transition_duration: 200,
-                    #[local_ref]
-                    add_named[Some("main")] = main_section_widget -> gtk::Box {},
-
-                    #[local_ref]
-                    add_named[Some("output")] = output_picker_widget -> gtk::Box {},
-
-                    #[local_ref]
-                    add_named[Some("input")] = input_picker_widget -> gtk::Box {},
-
-                    #[watch]
-                    set_visible_child_name: model.active_page.name(),
                 },
             },
         }
@@ -131,11 +136,12 @@ impl Component for AudioDropdown {
             .forward(sender.input_sender(), AudioDropdownMsg::InputPicker);
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_audio_max_height.get();
         watchers::spawn(&sender, &init.config);
 
         let model = Self {
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             active_page: AudioPage::Main,
             main_section,
             output_picker,
@@ -174,9 +180,9 @@ impl Component for AudioDropdown {
         _root: &Self::Root,
     ) {
         match msg {
-            AudioDropdownCmd::ScaleChanged(scale) => {
+            AudioDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
         }
     }

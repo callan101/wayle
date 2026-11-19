@@ -28,14 +28,13 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 395.0;
-const BASE_HEIGHT: f32 = 695.0;
 
 pub(crate) struct WeatherDropdown {
     weather: Arc<WeatherService>,
     config: Arc<ConfigService>,
 
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     page: WeatherPage,
     error_kind: Option<WeatherErrorKind>,
 
@@ -60,120 +59,126 @@ impl Component for WeatherDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-
-                #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_icon_name: Some("ld-sun-symbolic"),
-                    },
-                    #[template_child]
-                    label {
-                        set_label: &t!("dropdown-weather-title"),
-                    },
-                    #[template_child]
-                    actions {
-                        #[template]
-                        GhostIconButton {
-                            set_icon_name: "tb-refresh-symbolic",
-                            set_tooltip_text: Some(&t!("dropdown-weather-refresh")),
-                            connect_clicked => WeatherDropdownInput::Retry,
-                        },
-                    },
-                },
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownContent {
-                    set_vexpand: true,
+                Dropdown {
 
-                    #[name = "page_stack"]
-                    gtk::Stack {
-                        set_transition_type: gtk::StackTransitionType::Crossfade,
-                        set_vhomogeneous: true,
-                        set_hhomogeneous: true,
-                        #[name = "loaded_page"]
-                        add_named[Some("loaded")] = &gtk::Box {
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_vexpand: true,
-
-                            #[local_ref]
-                            weather_header_widget -> gtk::Box {},
-
-                            #[local_ref]
-                            stats_grid_widget -> gtk::Box {},
-
-                            #[local_ref]
-                            hourly_forecast_widget -> gtk::Box {},
-
-                            #[local_ref]
-                            daily_forecast_widget -> gtk::Box {},
-
-                            #[local_ref]
-                            sun_times_widget -> gtk::Box {},
+                    #[template]
+                    DropdownHeader {
+                        #[template_child]
+                        icon {
+                            set_icon_name: Some("ld-sun-symbolic"),
                         },
-
-                        #[name = "loading_page"]
-                        add_named[Some("loading")] = &gtk::Box {
-                            add_css_class: "loading-weather",
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_valign: gtk::Align::Center,
-                            set_halign: gtk::Align::Fill,
-                            set_vexpand: true,
-
-                            gtk::Image {
-                                add_css_class: "loading-icon",
-                                set_icon_name: Some("ld-sun-symbolic"),
-                            },
-
-                            gtk::Label {
-                                add_css_class: "loading-text",
-                                set_label: &t!("dropdown-weather-loading"),
-                                set_ellipsize: pango::EllipsizeMode::End,
-                            },
+                        #[template_child]
+                        label {
+                            set_label: &t!("dropdown-weather-title"),
                         },
-
-                        #[name = "error_page"]
-                        add_named[Some("error")] = &gtk::Box {
-                            add_css_class: "error-weather",
-                            set_orientation: gtk::Orientation::Vertical,
-                            set_valign: gtk::Align::Center,
-                            set_halign: gtk::Align::Fill,
-                            set_vexpand: true,
-
-                            gtk::Image {
-                                add_css_class: "error-icon",
-                                set_icon_name: Some("ld-info-symbolic"),
-                            },
-
-                            gtk::Label {
-                                add_css_class: "error-title",
-                                set_label: &t!("dropdown-weather-error-title"),
-                                set_ellipsize: pango::EllipsizeMode::End,
-                            },
-
-                            gtk::Label {
-                                add_css_class: "error-text",
-                                #[watch]
-                                set_label: &model.error_description(),
-                                set_ellipsize: pango::EllipsizeMode::End,
-                            },
-
-                            gtk::Button {
-                                add_css_class: "weather-retry-btn",
-                                set_halign: gtk::Align::Center,
-                                set_cursor_from_name: Some("pointer"),
-                                set_label: &t!("dropdown-weather-retry"),
+                        #[template_child]
+                        actions {
+                            #[template]
+                            GhostIconButton {
+                                set_icon_name: "tb-refresh-symbolic",
+                                set_tooltip_text: Some(&t!("dropdown-weather-refresh")),
                                 connect_clicked => WeatherDropdownInput::Retry,
                             },
                         },
+                    },
 
-                        #[watch]
-                        set_visible_child_name: model.page.name(),
+                    #[template]
+                    DropdownContent {
+                        set_vexpand: true,
+
+                        #[name = "page_stack"]
+                        gtk::Stack {
+                            set_transition_type: gtk::StackTransitionType::Crossfade,
+                            set_vhomogeneous: true,
+                            set_hhomogeneous: true,
+                            #[name = "loaded_page"]
+                            add_named[Some("loaded")] = &gtk::Box {
+                                set_orientation: gtk::Orientation::Vertical,
+                                set_vexpand: true,
+
+                                #[local_ref]
+                                weather_header_widget -> gtk::Box {},
+
+                                #[local_ref]
+                                stats_grid_widget -> gtk::Box {},
+
+                                #[local_ref]
+                                hourly_forecast_widget -> gtk::Box {},
+
+                                #[local_ref]
+                                daily_forecast_widget -> gtk::Box {},
+
+                                #[local_ref]
+                                sun_times_widget -> gtk::Box {},
+                            },
+
+                            #[name = "loading_page"]
+                            add_named[Some("loading")] = &gtk::Box {
+                                add_css_class: "loading-weather",
+                                set_orientation: gtk::Orientation::Vertical,
+                                set_valign: gtk::Align::Center,
+                                set_halign: gtk::Align::Fill,
+                                set_vexpand: true,
+
+                                gtk::Image {
+                                    add_css_class: "loading-icon",
+                                    set_icon_name: Some("ld-sun-symbolic"),
+                                },
+
+                                gtk::Label {
+                                    add_css_class: "loading-text",
+                                    set_label: &t!("dropdown-weather-loading"),
+                                    set_ellipsize: pango::EllipsizeMode::End,
+                                },
+                            },
+
+                            #[name = "error_page"]
+                            add_named[Some("error")] = &gtk::Box {
+                                add_css_class: "error-weather",
+                                set_orientation: gtk::Orientation::Vertical,
+                                set_valign: gtk::Align::Center,
+                                set_halign: gtk::Align::Fill,
+                                set_vexpand: true,
+
+                                gtk::Image {
+                                    add_css_class: "error-icon",
+                                    set_icon_name: Some("ld-info-symbolic"),
+                                },
+
+                                gtk::Label {
+                                    add_css_class: "error-title",
+                                    set_label: &t!("dropdown-weather-error-title"),
+                                    set_ellipsize: pango::EllipsizeMode::End,
+                                },
+
+                                gtk::Label {
+                                    add_css_class: "error-text",
+                                    #[watch]
+                                    set_label: &model.error_description(),
+                                    set_ellipsize: pango::EllipsizeMode::End,
+                                },
+
+                                gtk::Button {
+                                    add_css_class: "weather-retry-btn",
+                                    set_halign: gtk::Align::Center,
+                                    set_cursor_from_name: Some("pointer"),
+                                    set_label: &t!("dropdown-weather-retry"),
+                                    connect_clicked => WeatherDropdownInput::Retry,
+                                },
+                            },
+
+                            #[watch]
+                            set_visible_child_name: model.page.name(),
+                        },
                     },
                 },
             },
@@ -221,6 +226,7 @@ impl Component for WeatherDropdown {
             .detach();
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_weather_max_height.get();
         let (page, error_kind) = match init.weather.status.get() {
             WeatherStatus::Loading => (WeatherPage::Loading, None),
             WeatherStatus::Loaded => (WeatherPage::Loaded, None),
@@ -233,7 +239,7 @@ impl Component for WeatherDropdown {
             weather: init.weather,
             config: init.config,
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             page,
             error_kind,
             weather_header,
@@ -268,9 +274,9 @@ impl Component for WeatherDropdown {
         _root: &Self::Root,
     ) {
         match msg {
-            WeatherDropdownCmd::ScaleChanged(scale) => {
+            WeatherDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
 
             WeatherDropdownCmd::PageChanged { page, error } => {

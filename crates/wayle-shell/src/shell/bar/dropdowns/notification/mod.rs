@@ -25,14 +25,13 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 425.0;
-const BASE_HEIGHT: f32 = 725.0;
 
 pub(crate) struct NotificationDropdown {
     notification: Arc<NotificationService>,
     config: Arc<ConfigService>,
 
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
 
     dnd: bool,
     has_notifications: bool,
@@ -54,82 +53,23 @@ impl Component for NotificationDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-                set_overflow: gtk::Overflow::Hidden,
-
-                #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_visible: true,
-                        #[watch]
-                        set_icon_name: Some(
-                            if model.dnd {
-                                "ld-bell-off-symbolic"
-                            } else {
-                                "ld-bell-symbolic"
-                            }
-                        ),
-                    },
-                    #[template_child]
-                    label {
-                        set_label: &t!("notification-dropdown-title"),
-                    },
-                    #[template_child]
-                    actions {
-                        #[template]
-                        GhostButton {
-                            add_css_class: "notification-dropdown-clear-all",
-                            #[watch]
-                            set_visible: model.has_notifications,
-                            connect_clicked[sender] => move |_| {
-                                sender.input(NotificationDropdownMsg::ClearAll);
-                            },
-                            #[template_child]
-                            label {
-                                set_label: &t!("notification-dropdown-clear-all"),
-                            },
-                        },
-                    },
-                },
-
-                gtk::Box {
-                    add_css_class: "notification-dropdown-dnd-row",
-
-                    gtk::Label {
-                        add_css_class: "notification-dropdown-dnd-label",
-                        set_hexpand: true,
-                        set_halign: gtk::Align::Start,
-                        set_label: &t!("notification-dropdown-dnd-label"),
-                    },
-
-                    #[template]
-                    Switch {
-                        #[watch]
-                        #[block_signal(dnd_toggle)]
-                        set_active: model.dnd,
-                        connect_state_set[sender] => move |switch, active| {
-                            sender.input(NotificationDropdownMsg::DndToggled(active));
-                            switch.set_state(active);
-                            gtk::glib::Propagation::Stop
-                        } @dnd_toggle,
-                    },
-                },
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownContent {
-                    add_css_class: "notification-dropdown-content",
+                Dropdown {
+                    set_overflow: gtk::Overflow::Hidden,
 
                     #[template]
-                    EmptyState {
-                        #[watch]
-                        set_visible: !model.has_notifications,
+                    DropdownHeader {
                         #[template_child]
                         icon {
+                            set_visible: true,
                             #[watch]
                             set_icon_name: Some(
                                 if model.dnd {
@@ -140,26 +80,92 @@ impl Component for NotificationDropdown {
                             ),
                         },
                         #[template_child]
-                        title {
-                            set_label: &t!("notification-dropdown-empty-title"),
+                        label {
+                            set_label: &t!("notification-dropdown-title"),
                         },
                         #[template_child]
-                        description {
-                            set_label: &t!("notification-dropdown-empty-description"),
+                        actions {
+                            #[template]
+                            GhostButton {
+                                add_css_class: "notification-dropdown-clear-all",
+                                #[watch]
+                                set_visible: model.has_notifications,
+                                connect_clicked[sender] => move |_| {
+                                    sender.input(NotificationDropdownMsg::ClearAll);
+                                },
+                                #[template_child]
+                                label {
+                                    set_label: &t!("notification-dropdown-clear-all"),
+                                },
+                            },
                         },
                     },
 
-                    gtk::ScrolledWindow {
-                        add_css_class: "notification-dropdown-scroll",
-                        set_vexpand: true,
-                        set_hscrollbar_policy: gtk::PolicyType::Never,
-                        #[watch]
-                        set_visible: model.has_notifications,
+                    gtk::Box {
+                        add_css_class: "notification-dropdown-dnd-row",
 
-                        #[local_ref]
-                        groups_widget -> gtk::Box {
-                            add_css_class: "notification-dropdown-groups",
-                            set_orientation: gtk::Orientation::Vertical,
+                        gtk::Label {
+                            add_css_class: "notification-dropdown-dnd-label",
+                            set_hexpand: true,
+                            set_halign: gtk::Align::Start,
+                            set_label: &t!("notification-dropdown-dnd-label"),
+                        },
+
+                        #[template]
+                        Switch {
+                            #[watch]
+                            #[block_signal(dnd_toggle)]
+                            set_active: model.dnd,
+                            connect_state_set[sender] => move |switch, active| {
+                                sender.input(NotificationDropdownMsg::DndToggled(active));
+                                switch.set_state(active);
+                                gtk::glib::Propagation::Stop
+                            } @dnd_toggle,
+                        },
+                    },
+
+                    #[template]
+                    DropdownContent {
+                        add_css_class: "notification-dropdown-content",
+
+                        #[template]
+                        EmptyState {
+                            #[watch]
+                            set_visible: !model.has_notifications,
+                            #[template_child]
+                            icon {
+                                #[watch]
+                                set_icon_name: Some(
+                                    if model.dnd {
+                                        "ld-bell-off-symbolic"
+                                    } else {
+                                        "ld-bell-symbolic"
+                                    }
+                                ),
+                            },
+                            #[template_child]
+                            title {
+                                set_label: &t!("notification-dropdown-empty-title"),
+                            },
+                            #[template_child]
+                            description {
+                                set_label: &t!("notification-dropdown-empty-description"),
+                            },
+                        },
+
+                        gtk::ScrolledWindow {
+                            add_css_class: "notification-dropdown-scroll",
+                            set_vexpand: true,
+                            set_hscrollbar_policy: gtk::PolicyType::Never,
+                            set_propagate_natural_height: true,
+                            #[watch]
+                            set_visible: model.has_notifications,
+
+                            #[local_ref]
+                            groups_widget -> gtk::Box {
+                                add_css_class: "notification-dropdown-groups",
+                                set_orientation: gtk::Orientation::Vertical,
+                            },
                         },
                     },
                 },
@@ -173,6 +179,7 @@ impl Component for NotificationDropdown {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_notification_max_height.get();
         let dnd = init.notification.dnd.get();
 
         let groups = FactoryVecDeque::builder()
@@ -187,7 +194,7 @@ impl Component for NotificationDropdown {
             notification: init.notification.clone(),
             config: init.config.clone(),
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             dnd,
             has_notifications: false,
             groups,
@@ -235,9 +242,9 @@ impl Component for NotificationDropdown {
                 self.dnd = dnd;
             }
 
-            NotificationDropdownCmd::ScaleChanged(scale) => {
+            NotificationDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
 
             NotificationDropdownCmd::IconSourceChanged => {

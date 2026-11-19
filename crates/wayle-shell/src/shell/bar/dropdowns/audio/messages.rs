@@ -19,5 +19,5 @@ pub(crate) enum AudioDropdownMsg {
 
 #[derive(Debug)]
 pub(crate) enum AudioDropdownCmd {
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
 }

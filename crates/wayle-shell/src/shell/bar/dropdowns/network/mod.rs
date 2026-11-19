@@ -25,12 +25,11 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 382.0;
-const BASE_HEIGHT: f32 = 512.0;
 
 pub(crate) struct NetworkDropdown {
     network: Arc<NetworkService>,
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     wifi_enabled: bool,
     wifi_available: bool,
     scanning: bool,
@@ -53,75 +52,81 @@ impl Component for NetworkDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-                set_overflow: gtk::Overflow::Hidden,
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_visible: true,
-                        #[watch]
-                        set_icon_name: Some(if model.wifi_available {
-                            "tb-wifi-symbolic"
-                        } else {
-                            "cm-wired-symbolic"
-                        }),
-                    },
-                    #[template_child]
-                    label {
-                        set_label: &t!("dropdown-network-title"),
-                    },
-                    #[template_child]
-                    actions {
-                        #[template]
-                        GhostIconButton {
-                            add_css_class: "network-scan-btn",
-                            set_icon_name: "tb-refresh-symbolic",
+                Dropdown {
+                    set_overflow: gtk::Overflow::Hidden,
+
+                    #[template]
+                    DropdownHeader {
+                        #[template_child]
+                        icon {
+                            set_visible: true,
                             #[watch]
-                            set_visible: model.wifi_available && model.wifi_enabled,
-                            #[watch]
-                            set_sensitive: !model.scanning,
-                            #[watch]
-                            set_css_classes: &if model.scanning {
-                                vec!["ghost-icon", "network-scan-btn", "scanning"]
+                            set_icon_name: Some(if model.wifi_available {
+                                "tb-wifi-symbolic"
                             } else {
-                                vec!["ghost-icon", "network-scan-btn"]
-                            },
-                            connect_clicked => NetworkDropdownMsg::ScanRequested,
+                                "cm-wired-symbolic"
+                            }),
                         },
+                        #[template_child]
+                        label {
+                            set_label: &t!("dropdown-network-title"),
+                        },
+                        #[template_child]
+                        actions {
+                            #[template]
+                            GhostIconButton {
+                                add_css_class: "network-scan-btn",
+                                set_icon_name: "tb-refresh-symbolic",
+                                #[watch]
+                                set_visible: model.wifi_available && model.wifi_enabled,
+                                #[watch]
+                                set_sensitive: !model.scanning,
+                                #[watch]
+                                set_css_classes: &if model.scanning {
+                                    vec!["ghost-icon", "network-scan-btn", "scanning"]
+                                } else {
+                                    vec!["ghost-icon", "network-scan-btn"]
+                                },
+                                connect_clicked => NetworkDropdownMsg::ScanRequested,
+                            },
 
-                        #[template]
-                        Switch {
-                            #[watch]
-                            #[block_signal(wifi_toggle_handler)]
-                            set_active: model.wifi_enabled,
-                            #[watch]
-                            set_visible: model.wifi_available,
-                            connect_state_set[sender] => move |switch, active| {
-                                sender.input(NetworkDropdownMsg::WifiToggled(active));
-                                switch.set_state(active);
-                                gtk::glib::Propagation::Stop
-                            } @wifi_toggle_handler,
+                            #[template]
+                            Switch {
+                                #[watch]
+                                #[block_signal(wifi_toggle_handler)]
+                                set_active: model.wifi_enabled,
+                                #[watch]
+                                set_visible: model.wifi_available,
+                                connect_state_set[sender] => move |switch, active| {
+                                    sender.input(NetworkDropdownMsg::WifiToggled(active));
+                                    switch.set_state(active);
+                                    gtk::glib::Propagation::Stop
+                                } @wifi_toggle_handler,
+                            },
                         },
                     },
-                },
 
-                #[template]
-                DropdownContent {
-                    add_css_class: "network-content",
-                    set_vexpand: true,
-
-                    #[local_ref]
-                    active_connections_widget -> gtk::Box {},
-
-                    #[local_ref]
-                    available_networks_widget -> gtk::Box {
+                    #[template]
+                    DropdownContent {
+                        add_css_class: "network-content",
                         set_vexpand: true,
+
+                        #[local_ref]
+                        active_connections_widget -> gtk::Box {},
+
+                        #[local_ref]
+                        available_networks_widget -> gtk::Box {
+                            set_vexpand: true,
+                        },
                     },
                 },
             },
@@ -150,13 +155,14 @@ impl Component for NetworkDropdown {
         let wifi_enabled = wifi.as_ref().is_some_and(|wifi| wifi.enabled.get());
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_network_max_height.get();
 
         watchers::spawn(&sender, &init.config, &init.network);
 
         let mut model = Self {
             network: init.network,
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             wifi_enabled,
             wifi_available,
             scanning: false,
@@ -230,9 +236,9 @@ impl Component for NetworkDropdown {
         _root: &Self::Root,
     ) {
         match msg {
-            NetworkDropdownCmd::ScaleChanged(scale) => {
+            NetworkDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
 
             NetworkDropdownCmd::WifiDeviceChanged => {

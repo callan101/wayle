@@ -14,9 +14,13 @@ pub(super) fn spawn_config_watcher(
     config: &Arc<ConfigService>,
 ) {
     let scale = config.config().styling.scale.clone();
+    let max_height = config.config().bar.dropdown_bluetooth_max_height.clone();
 
-    watch!(sender, [scale.watch()], |out| {
-        let _ = out.send(BluetoothDropdownCmd::ScaleChanged(scale.get().value()));
+    watch!(sender, [scale.watch(), max_height.watch()], |out| {
+        let _ = out.send(BluetoothDropdownCmd::SizeChanged {
+            scale: scale.get().value(),
+            max_height: max_height.get(),
+        });
     });
 }
 

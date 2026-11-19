@@ -92,6 +92,7 @@ impl Component for AvailableNetworks {
                     add_css_class: "network-list-scroll",
                     set_vexpand: true,
                     set_hscrollbar_policy: gtk::PolicyType::Never,
+                    set_propagate_natural_height: true,
 
                     #[local_ref]
                     network_list_widget -> gtk::Box {

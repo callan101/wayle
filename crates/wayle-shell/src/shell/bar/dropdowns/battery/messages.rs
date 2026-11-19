@@ -13,5 +13,5 @@ pub(crate) struct BatteryDropdownInit {
 
 #[derive(Debug)]
 pub(crate) enum BatteryDropdownCmd {
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
 }

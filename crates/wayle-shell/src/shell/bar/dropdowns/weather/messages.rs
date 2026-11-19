@@ -32,7 +32,7 @@ pub(crate) enum WeatherDropdownInput {
 
 #[derive(Debug)]
 pub(crate) enum WeatherDropdownCmd {
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
     PageChanged {
         page: WeatherPage,
         error: Option<WeatherErrorKind>,

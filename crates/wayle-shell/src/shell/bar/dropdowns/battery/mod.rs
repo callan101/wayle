@@ -17,11 +17,10 @@ use self::{
 use crate::{i18n::t, shell::bar::dropdowns::scaled_dimension};
 
 const BASE_WIDTH: f32 = 382.0;
-const BASE_HEIGHT: f32 = 312.0;
 
 pub(crate) struct BatteryDropdown {
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     battery_section: Controller<BatterySection>,
     power_profile: Controller<PowerProfileSection>,
 }
@@ -40,38 +39,44 @@ impl Component for BatteryDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-
-                #[template]
-                DropdownHeader {
-                    #[template_child]
-                    icon {
-                        set_visible: true,
-                        set_icon_name: Some("ld-battery-full-symbolic"),
-                    },
-                    #[template_child]
-                    label {
-                        set_label: &t!("dropdown-battery-title"),
-                    },
-                    #[template_child]
-                    actions {
-                        set_visible: false,
-                    },
-                },
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
                 #[template]
-                DropdownContent {
-                    set_vexpand: true,
+                Dropdown {
 
-                    #[local_ref]
-                    battery_section_widget -> gtk::Box {},
+                    #[template]
+                    DropdownHeader {
+                        #[template_child]
+                        icon {
+                            set_visible: true,
+                            set_icon_name: Some("ld-battery-full-symbolic"),
+                        },
+                        #[template_child]
+                        label {
+                            set_label: &t!("dropdown-battery-title"),
+                        },
+                        #[template_child]
+                        actions {
+                            set_visible: false,
+                        },
+                    },
 
-                    #[local_ref]
-                    power_profile_widget -> gtk::Box {},
+                    #[template]
+                    DropdownContent {
+                        set_vexpand: true,
+
+                        #[local_ref]
+                        battery_section_widget -> gtk::Box {},
+
+                        #[local_ref]
+                        power_profile_widget -> gtk::Box {},
+                    },
                 },
             },
         }
@@ -95,11 +100,12 @@ impl Component for BatteryDropdown {
             .detach();
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_battery_max_height.get();
         watchers::spawn(&sender, &init.config);
 
         let model = Self {
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             battery_section,
             power_profile,
         };
@@ -118,9 +124,9 @@ impl Component for BatteryDropdown {
         _root: &Self::Root,
     ) {
         match msg {
-            BatteryDropdownCmd::ScaleChanged(scale) => {
+            BatteryDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
         }
     }

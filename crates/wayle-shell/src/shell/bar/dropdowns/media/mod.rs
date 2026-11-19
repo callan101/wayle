@@ -18,7 +18,6 @@ use self::{
 use crate::shell::bar::dropdowns::scaled_dimension;
 
 const BASE_WIDTH: f32 = 380.0;
-const BASE_HEIGHT: f32 = 410.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MediaPage {
@@ -37,7 +36,7 @@ impl MediaPage {
 
 pub(crate) struct MediaDropdown {
     scaled_width: i32,
-    scaled_height: i32,
+    scaled_max_height: i32,
     active_page: MediaPage,
     player_view: Controller<PlayerView>,
     source_picker: Controller<SourcePicker>,
@@ -57,24 +56,30 @@ impl Component for MediaDropdown {
             set_has_arrow: false,
             #[watch]
             set_width_request: model.scaled_width,
-            #[watch]
-            set_height_request: model.scaled_height,
 
-            #[template]
-            Dropdown {
-                #[name = "stack"]
-                gtk::Stack {
-                    set_vexpand: true,
-                    set_transition_type: gtk::StackTransitionType::SlideLeftRight,
-                    set_transition_duration: 200,
-                    #[local_ref]
-                    add_named[Some("main")] = player_view_widget -> gtk::Box {},
+            gtk::ScrolledWindow {
+                add_css_class: "dropdown-scroll",
+                set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
+                #[watch]
+                set_max_content_height: model.scaled_max_height,
 
-                    #[local_ref]
-                    add_named[Some("sources")] = source_picker_widget -> gtk::Box {},
+                #[template]
+                Dropdown {
+                    #[name = "stack"]
+                    gtk::Stack {
+                        set_vexpand: true,
+                        set_transition_type: gtk::StackTransitionType::SlideLeftRight,
+                        set_transition_duration: 200,
+                        #[local_ref]
+                        add_named[Some("main")] = player_view_widget -> gtk::Box {},
 
-                    #[watch]
-                    set_visible_child_name: model.active_page.name(),
+                        #[local_ref]
+                        add_named[Some("sources")] = source_picker_widget -> gtk::Box {},
+
+                        #[watch]
+                        set_visible_child_name: model.active_page.name(),
+                    },
                 },
             },
         }
@@ -98,11 +103,12 @@ impl Component for MediaDropdown {
             .forward(sender.input_sender(), MediaDropdownMsg::SourcePicker);
 
         let scale = init.config.config().styling.scale.get().value();
+        let max_height = init.config.config().bar.dropdown_media_max_height.get();
         watchers::spawn(&sender, &init.config);
 
         let model = Self {
             scaled_width: scaled_dimension(BASE_WIDTH, scale),
-            scaled_height: scaled_dimension(BASE_HEIGHT, scale),
+            scaled_max_height: scaled_dimension(max_height as f32, scale),
             active_page: MediaPage::Main,
             player_view,
             source_picker,
@@ -147,9 +153,9 @@ impl Component for MediaDropdown {
         _root: &Self::Root,
     ) {
         match msg {
-            MediaDropdownCmd::ScaleChanged(scale) => {
+            MediaDropdownCmd::SizeChanged { scale, max_height } => {
                 self.scaled_width = scaled_dimension(BASE_WIDTH, scale);
-                self.scaled_height = scaled_dimension(BASE_HEIGHT, scale);
+                self.scaled_max_height = scaled_dimension(max_height as f32, scale);
             }
         }
     }

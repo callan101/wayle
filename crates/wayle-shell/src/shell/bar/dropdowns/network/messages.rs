@@ -20,7 +20,7 @@ pub(crate) enum NetworkDropdownMsg {
 #[derive(Debug)]
 #[allow(clippy::enum_variant_names)]
 pub(crate) enum NetworkDropdownCmd {
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
     WifiDeviceChanged,
     WifiEnabledChanged(bool),
 }

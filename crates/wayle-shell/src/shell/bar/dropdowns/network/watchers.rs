@@ -14,8 +14,12 @@ pub(super) fn spawn(
     network: &Arc<NetworkService>,
 ) {
     let scale = config.config().styling.scale.clone();
-    watch!(sender, [scale.watch()], |out| {
-        let _ = out.send(NetworkDropdownCmd::ScaleChanged(scale.get().value()));
+    let max_height = config.config().bar.dropdown_network_max_height.clone();
+    watch!(sender, [scale.watch(), max_height.watch()], |out| {
+        let _ = out.send(NetworkDropdownCmd::SizeChanged {
+            scale: scale.get().value(),
+            max_height: max_height.get(),
+        });
     });
 
     let wifi = network.wifi.clone();

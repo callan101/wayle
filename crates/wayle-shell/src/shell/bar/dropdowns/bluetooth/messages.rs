@@ -41,7 +41,7 @@ pub(crate) enum PairingCardOutput {
 #[derive(Debug)]
 pub(crate) enum BluetoothDropdownCmd {
     ServiceReady(Arc<BluetoothService>),
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
     EnabledChanged(bool),
     AvailableChanged(bool),
     ScanComplete,

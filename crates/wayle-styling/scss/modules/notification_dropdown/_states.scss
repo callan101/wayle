@@ -1,10 +1,8 @@
 .notification-dropdown .dropdown-content {
     padding: 0;
-    min-height: 200px;
 }
 
 .notification-dropdown-scroll {
-    min-height: 200px;
     margin: var(--space-sm) 0;
     background: transparent;
 
@@ -25,6 +23,10 @@
     font-size: var(--text-md);
     font-weight: var(--weight-bold);
     color: var(--fg-default);
+}
+
+.notification-dropdown-content .empty-state {
+    min-height: 200px;
 }
 
 .notification-dropdown-content .empty-state .description {

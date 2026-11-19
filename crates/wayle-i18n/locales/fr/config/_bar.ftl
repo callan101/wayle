@@ -122,6 +122,27 @@ settings-bar-dropdown-autohide = Masquage automatique du menu déroulant
 settings-bar-dropdown-freeze-label = Figer le libellé
     .description = Empêcher la mise à jour du libellé du bouton de la barre lorsque son menu déroulant est ouvert
 
+settings-bar-dropdown-notification-max-height = Hauteur max. : Notifications
+    .description = Hauteur maximale du menu déroulant Notifications avant le défilement
+
+settings-bar-dropdown-weather-max-height = Hauteur max. : Météo
+    .description = Hauteur maximale du menu déroulant Météo avant le défilement
+
+settings-bar-dropdown-bluetooth-max-height = Hauteur max. : Bluetooth
+    .description = Hauteur maximale du menu déroulant Bluetooth avant le défilement
+
+settings-bar-dropdown-network-max-height = Hauteur max. : Réseau
+    .description = Hauteur maximale du menu déroulant Réseau avant le défilement
+
+settings-bar-dropdown-audio-max-height = Hauteur max. : Audio
+    .description = Hauteur maximale du menu déroulant Audio avant le défilement
+
+settings-bar-dropdown-media-max-height = Hauteur max. : Média
+    .description = Hauteur maximale du menu déroulant Média avant le défilement
+
+settings-bar-dropdown-battery-max-height = Hauteur max. : Batterie
+    .description = Hauteur maximale du menu déroulant Batterie avant le défilement
+
 settings-bar-shadow = Ombre
     .description = Activer l'ombre portée
 

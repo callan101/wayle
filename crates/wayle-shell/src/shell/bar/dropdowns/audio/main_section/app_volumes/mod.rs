@@ -42,6 +42,7 @@ impl Component for AppVolumes {
                 add_css_class: "app-volumes-scroll",
                 set_vexpand: true,
                 set_hscrollbar_policy: gtk::PolicyType::Never,
+                set_propagate_natural_height: true,
 
                 gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,

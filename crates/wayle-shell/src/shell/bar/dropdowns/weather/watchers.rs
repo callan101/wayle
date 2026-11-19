@@ -21,9 +21,13 @@ pub(super) fn spawn(
 
 fn spawn_scale_watcher(sender: &ComponentSender<WeatherDropdown>, config: &Arc<ConfigService>) {
     let scale = config.config().styling.scale.clone();
+    let max_height = config.config().bar.dropdown_weather_max_height.clone();
 
-    watch!(sender, [scale.watch()], |out| {
-        let _ = out.send(WeatherDropdownCmd::ScaleChanged(scale.get().value()));
+    watch!(sender, [scale.watch(), max_height.watch()], |out| {
+        let _ = out.send(WeatherDropdownCmd::SizeChanged {
+            scale: scale.get().value(),
+            max_height: max_height.get(),
+        });
     });
 }
 

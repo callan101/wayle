@@ -19,7 +19,7 @@ pub(crate) enum NotificationDropdownMsg {
 pub(crate) enum NotificationDropdownCmd {
     NotificationsChanged,
     DndChanged(bool),
-    ScaleChanged(f32),
+    SizeChanged { scale: f32, max_height: u32 },
     IconSourceChanged,
     TimeTick,
 }
